@@ -1,32 +1,41 @@
 import { useOutletContext } from 'react-router-dom'
+import React, { useEffect, useState } from 'react'
 
 
 interface GalleryContextType {
-  data: string | null;
+  data: [] | null;
   isLoading: boolean;
-  error: string | null;
-  searchHistory: string[];
-  executeSearch: (searchTerm: string) => void;
+  handleTriggerSearchQuery: (inputValue: string) => void;
 }
 
+const Main: React.FC = () => {
+  const [inputValue, setInputValue] = useState<string>('')
+  const { data, isLoading, error, handleTriggerSearchQuery } = useOutletContext<GalleryContextType>()
 
-const Main: React.FC =() => {
-  const { data, isLoading, error } = useOutletContext<GalleryContextType>();
-
-  useEffect(() => {
-    if (data) {
-      console.log('New data received:', data);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value
+    setInputValue(newValue)
+    if (newValue.trim() !== '') { // Check the directly obtained newValue instead
+      handleTriggerSearchQuery(newValue); // Use the newValue directly
     }
-  }, [data]);
+  }
 
-
-  // if (isLoading) return <p>Loading...</p>;
-  // if (error) return <p>Error: {error}</p>;
-
+  console.log(inputValue)
 
   return (
     <div>
-      Main
+      <div>
+        <input onChange={handleInputChange}/>
+        {isLoading ? <p> ... Loading </p> :
+          <div>
+            {data?.map((el) => {
+              return (
+                <img key={el.id} src={el.urls.small} alt={el.alt_descrition}/>
+              )
+            })}
+          </div>
+        }
+      </div>
     </div>
   )
 }

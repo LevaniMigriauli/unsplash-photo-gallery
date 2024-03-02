@@ -1,38 +1,50 @@
 import React, { useState, ReactNode } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
+import { QueryFunctionContext, useQuery } from '@tanstack/react-query'
 
 
 interface LayoutProps {
   children?: ReactNode;
 }
 
-const accessKey = 'tPdyTu74On85viGJ0ZcnNY3eAojdhVptwWOGToDYtrM'
-
 const Layout: React.FC<LayoutProps> = () => {
-  // const [data, setData] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState<boolean>(false)
-  // const [searchedKeyHistory, searchedKeyHistory] = useState<string[]>([])
+  const [searchInputValue, setSearchInputValue] = useState<string>()
 
+  const accessKey = 'tPdyTu74On85viGJ0ZcnNY3eAojdhVptwWOGToDYtrM'
+  const handlePhotosFetch = async ({
+                                     queryKey
+                                   }: QueryFunctionContext<[string, string]>) => {
+    const [, query] = queryKey
+    let url = `https://api.unsplash.com/photos?order_by=popular&per_page=20`
 
-  const handlePhotosFetch =async ((page = 1) => {
-    const url = `https://api.unsplash.com/photos?order_by=popular&per_page=20&page=${page}`
+    if (query) {
+      url = `https://api.unsplash.com/search/photos?query=${query}&per_page=20`
+    }
 
     const response = await fetch(url, {
       headers: {
-        Authorization: `Client - ID ${accessKey}`
+        Authorization: `Client-ID ${accessKey}`
       }
     })
 
-    // console.log(response.json())
-    return response.json()
+    const jsonData = await response.json()
+    return query ? jsonData.results : jsonData
+  }
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['photos', searchInputValue],
+    queryFn: handlePhotosFetch,
+    enabled: true
   })
 
-  handlePhotosFetch()
+  const handleTriggerSearchQuery = async (inputValue: string) => {
+    console.log(inputValue)
+    setSearchInputValue(inputValue)
+  }
 
   return (
     <div>
-      {isLoading ? <p>Loading...</p>
-        :
+      {error ? <p> ... Error </p> :
         <div>
           <header>
             <nav>
@@ -40,7 +52,7 @@ const Layout: React.FC<LayoutProps> = () => {
               <NavLink to={'history'}>History</NavLink>
             </nav>
           </header>
-          <Outlet/>
+          <Outlet context={{ data, error, handleTriggerSearchQuery }}/>
         </div>}
     </div>
   )
